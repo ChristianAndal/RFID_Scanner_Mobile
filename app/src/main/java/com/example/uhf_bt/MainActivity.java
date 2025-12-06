@@ -551,6 +551,9 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     }
 
     private void startDisconnectTimer(long time) {
+        // CRITICAL FIX: Cancel any existing timer first to prevent multiple timers running
+        cancelDisconnectTimer();
+        
         timeCountCur = time;
         timerTask = new DisconnectTimerTask();
         mDisconnectTimer.schedule(timerTask, 0, period);
@@ -568,15 +571,21 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
         @Override
         public void run() {
-            Log.e(TAG, "timeCountCur = " + timeCountCur);
+            Log.e(TAG, "timeCountCur = " + timeCountCur + ", isScanning = " + isScanning);
             Message msg = mHandler.obtainMessage(RUNNING_DISCONNECT_TIMER, timeCountCur);
             mHandler.sendMessage(msg);
-            if(isScanning) {
+            
+            // CRITICAL FIX: Decrement first to prevent immediate disconnect
+            timeCountCur -= period;
+            
+            // CRITICAL FIX: Never disconnect while scanning or right after scanning stops
+            if (isScanning) {
+                // Reset timer while scanning to prevent disconnection
                 resetDisconnectTime();
-            } else if (timeCountCur <= 0){
+            } else if (timeCountCur <= 0) {
+                // Only disconnect if NOT scanning and timer has expired
                 disconnect(true);
             }
-            timeCountCur -= period;
         }
     }
     public class ExcelTask extends AsyncTask<String, Integer, Boolean> {

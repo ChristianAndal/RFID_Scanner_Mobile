@@ -389,6 +389,9 @@ public class UHFReadTagFragment extends Fragment implements View.OnClickListener
     private void stop() {
         cancelInventoryTask();
         mContext.isScanning=false;
+        // CRITICAL FIX: Reset disconnect timer when scanning stops
+        // This prevents immediate disconnect after scanning which causes device shutdown
+        mContext.resetDisconnectTime();
     }
 
     private void stopInventory(){
