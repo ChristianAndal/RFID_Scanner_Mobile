@@ -1,0 +1,30 @@
+FIX RFID SCANNER SHUTDOWN BUG
+
+Problem: Device shuts down permanently after scanning stops (5 seconds).
+
+Root Cause: Disconnect timer bugs causing improper disconnection during/after scanning.
+
+FIXES NEEDED:
+
+1. In startDisconnectTimer() method:
+   - Add cancelDisconnectTimer() call BEFORE starting new timer
+   - Prevents multiple timers running simultaneously
+
+2. In DisconnectTimerTask.run() method:
+   - Move timeCountCur -= period BEFORE the disconnect check
+   - Change logic: if (isScanning) { resetDisconnectTime(); } else if (timeCountCur <= 0) { disconnect(); }
+   - Never disconnect while isScanning is true
+
+3. In stop() method (where scanning stops):
+   - Add resetDisconnectTime() call after setting isScanning = false
+   - Prevents immediate disconnect after scanning stops
+
+Key Variables to Find:
+- isScanning (boolean)
+- timeCountCur (timer count)
+- timerTask (TimerTask)
+- disconnect() method
+- resetDisconnectTime() method
+
+Result: Device will no longer shut down after scanning. Timer only disconnects when NOT scanning and timer expired.
+
